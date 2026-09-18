@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Автосервис «Домкрат»: ремонт и обслуживание легковых авто</title>
+<meta name="description" content="Диагностика, ТО, тормоза, подвеска, шиномонтаж. Выберите, что с машиной, и узнайте примерную цену и срок.">
+
+<!--
+  ДЕМО-САЙТ. Компания вымышленная.
+  Что заменить под реального клиента:
+    1. Название «Домкрат» (искать по тексту)
+    2. Телефон: +7 (900) 000-00-00  и  tel:+79000000000
+    3. Telegram: https://t.me/your_username
+    4. Адрес: ул. Примерная, 2
+    5. Цены: таблица в <section id="prices"> и поле price в объекте CASES внизу
+    6. Симптомы и причины: объект CASES в скрипте
+    7. Часы работы: таблица #hours и объект HOURS в скрипте
+-->
+
+<style>
+  :root{
+    --bg:     #ECEFF1;
+    --card:   #FFFFFF;
+    --ink:    #1E2A33;
+    --muted:  #52616D;
+    --line:   #CDD5DB;
+    --petrol: #0E5A66;
+    --petrol-dark: #0A424B;
+    --amber:  #F2B200;
+    --red:    #B3261E;
+    --green:  #23744B;
+
+    --head: "Bahnschrift", "Arial Narrow", "Roboto Condensed", system-ui, sans-serif;
+    --body: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  }
+
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:var(--body); font-size:17px; line-height:1.55;
+  }
+  a{ color:inherit; }
+  :focus-visible{ outline:3px solid var(--petrol); outline-offset:3px; border-radius:4px; }
+  p{ margin:0 0 14px; }
+
+  .wrap{ width:min(1060px, 100% - 40px); margin-inline:auto; }
+
+  h1,h2,h3{ font-family:var(--head); color:var(--ink); margin:0; line-height:1.08; }
+  h1{ font-size:clamp(34px, 6vw, 58px); font-weight:700; letter-spacing:-0.01em; }
+  h2{ font-size:clamp(28px, 4vw, 38px); font-weight:700; margin-bottom:18px; }
+  h3{ font-size:20px; font-weight:700; }
+
+  /* ---------- Кнопки ---------- */
+  .btn{
+    display:inline-block; padding:14px 22px; border-radius:8px; border:2px solid var(--petrol);
+    background:var(--petrol); color:#fff; font:600 17px var(--body); text-decoration:none; cursor:pointer;
+    transition:background .15s, color .15s;
+  }
+  .btn:hover{ background:var(--petrol-dark); border-color:var(--petrol-dark); }
+  .btn.ghost{ background:transparent; color:var(--petrol); }
+  .btn.ghost:hover{ background:var(--petrol); color:#fff; }
+
+  /* ---------- Шапка ---------- */
+  header.top{ background:var(--card); border-bottom:1px solid var(--line); padding:16px 0; }
+  header.top .wrap{ display:flex; align-items:center; justify-content:space-between; gap:16px; }
+  .logo{ font-family:var(--head); font-weight:700; font-size:24px; text-decoration:none; color:var(--petrol); }
+  nav{ display:flex; gap:22px; }
+  nav a{ text-decoration:none; color:var(--muted); font-weight:500; }
+  nav a:hover{ color:var(--petrol); }
+  .phone{ font-weight:700; text-decoration:none; white-space:nowrap; }
+
+  /* ---------- Главный экран ---------- */
+  .hero{ padding:52px 0 64px; }
+  .hero .wrap{ display:grid; grid-template-columns:1fr 1fr; gap:48px; align-items:start; }
+  .hero-text p.lead{ font-size:20px; color:var(--muted); margin:20px 0 26px; max-width:30em; }
+
+  .status{ display:inline-flex; align-items:center; gap:10px; margin-top:26px; font-weight:500; }
+  .dot{ width:12px; height:12px; border-radius:50%; background:var(--muted); flex:none; }
+  .status.open .dot{ background:var(--green); }
+  .status.closed .dot{ background:var(--red); }
+
+  /* ---------- Подбор по симптому ---------- */
+  .picker h2{ font-size:26px; margin-bottom:14px; }
+  .symptoms{ display:flex; flex-wrap:wrap; gap:10px; margin:0 0 20px; padding:0; list-style:none; }
+  .symptoms button{
+    font:500 16px var(--body); color:var(--ink); background:var(--card);
+    border:2px solid var(--line); border-radius:999px; padding:10px 16px; cursor:pointer;
+    transition:border-color .15s, background .15s, color .15s;
+  }
+  .symptoms button:hover{ border-color:var(--petrol); }
+  .symptoms button[aria-pressed="true"]{ background:var(--petrol); border-color:var(--petrol); color:#fff; }
+
+  /* Карточка-«заказ-наряд» с перфорацией */
+  .ticket{
+    position:relative; background:var(--card); border:1px solid var(--line);
+    border-radius:14px; padding:0; overflow:visible;
+  }
+  .ticket-head{
+    background:var(--amber); color:#241C00; padding:12px 24px; border-radius:13px 13px 0 0;
+    font-family:var(--head); font-weight:700; font-size:18px;
+    display:flex; justify-content:space-between; gap:12px; align-items:baseline;
+  }
+  .ticket-head small{ font-family:var(--body); font-weight:500; font-size:14px; }
+  .ticket-body{ padding:22px 24px 4px; }
+  .ticket-body h3{ margin-bottom:8px; }
+  .ticket-body ul{ margin:0 0 6px; padding-left:20px; }
+  .ticket-body li{ margin-bottom:4px; }
+  .perf{ position:relative; border-top:2px dashed var(--line); margin:14px 0 0; }
+  .perf::before,.perf::after{
+    content:""; position:absolute; top:-12px; width:22px; height:22px; border-radius:50%;
+    background:var(--bg); border:1px solid var(--line);
+  }
+  .perf::before{ left:-12px; }
+  .perf::after{ right:-12px; }
+  .ticket-foot{ padding:18px 24px 22px; display:grid; grid-template-columns:1fr 1fr; gap:14px 24px; }
+  .ticket-foot dt{ color:var(--muted); font-size:14px; }
+  .ticket-foot dd{ margin:0 0 4px; font-weight:700; font-size:19px; font-variant-numeric:tabular-nums; }
+  .urgency{ grid-column:1 / -1; padding:10px 14px; border-radius:8px; font-weight:500; font-size:16px; }
+  .urgency.now{ background:#FBE4E2; color:#7A1B15; }
+  .urgency.soon{ background:#FFF1CC; color:#5A4300; }
+  .urgency.plan{ background:#DFF1E7; color:#164B30; }
+  .ticket-note{ grid-column:1 / -1; color:var(--muted); font-size:14px; margin:0; }
+  .ticket-cta{ grid-column:1 / -1; }
+
+  .ticket-empty{ padding:28px 24px 30px; color:var(--muted); }
+  .ticket-empty strong{ display:block; color:var(--ink); font-family:var(--head); font-size:22px; margin-bottom:6px; }
+
+  .fade{ animation:fade .25s ease-out; }
+  @keyframes fade{ from{ opacity:0; transform:translateY(6px); } to{ opacity:1; transform:none; } }
+
+  /* ---------- Секции ---------- */
+  section{ padding:56px 0; }
+  section.alt{ background:var(--card); border-block:1px solid var(--line); }
+  .section-note{ color:var(--muted); max-width:36em; margin-bottom:24px; }
+
+  table.prices{ width:100%; border-collapse:collapse; }
+  table.prices th, table.prices td{ padding:14px 0; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }
+  table.prices thead th{ color:var(--muted); font-weight:500; font-size:15px; }
+  table.prices td:last-child, table.prices th:last-child{ text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums; }
+  table.prices td:last-child{ font-weight:700; }
+  table.prices small{ display:block; color:var(--muted); font-weight:400; font-size:15px; }
+
+  ol.steps{ list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(4, 1fr); gap:20px; counter-reset:step; }
+  ol.steps li{ counter-increment:step; border-top:4px solid var(--petrol); padding-top:14px; }
+  ol.steps li::before{
+    content:counter(step); display:block; font-family:var(--head); font-weight:700;
+    font-size:30px; color:var(--petrol); margin-bottom:4px;
+  }
+  ol.steps strong{ display:block; font-family:var(--head); font-size:20px; margin-bottom:4px; }
+  ol.steps span{ color:var(--muted); font-size:16px; }
+
+  .contact-grid{ display:grid; grid-template-columns:1fr 1fr; gap:40px; }
+  .contact-grid h3{ margin:0 0 10px; }
+  .contact-buttons{ display:flex; flex-direction:column; gap:12px; align-items:flex-start; margin:18px 0 26px; }
+  .hours{ width:100%; border-collapse:collapse; }
+  .hours td{ padding:8px 0; border-bottom:1px solid var(--line); }
+  .hours td:last-child{ text-align:right; font-variant-numeric:tabular-nums; }
+  .hours tr.today td{ font-weight:700; color:var(--petrol); }
+
+  footer{ padding:28px 0 40px; color:var(--muted); font-size:15px; }
+  footer .demo{ display:inline-block; padding:6px 12px; border-radius:8px; background:#DCE3E8; color:var(--ink); margin-bottom:10px; }
+
+  /* ---------- Телефоны и планшеты ---------- */
+  @media (max-width:860px){
+    .hero .wrap{ grid-template-columns:1fr; gap:36px; }
+    ol.steps{ grid-template-columns:1fr 1fr; }
+  }
+  @media (max-width:640px){
+    body{ font-size:16px; }
+    nav{ display:none; }
+    .hero{ padding:32px 0 44px; }
+    ol.steps{ grid-template-columns:1fr; }
+    .contact-grid{ grid-template-columns:1fr; gap:32px; }
+    .ticket-foot{ grid-template-columns:1fr; }
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    .fade{ animation:none; }
+    html{ scroll-behavior:auto; }
+  }
+</style>
+</head>
+
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="logo" href="#top">Домкрат</a>
+    <nav aria-label="Разделы сайта">
+      <a href="#prices">Цены</a>
+      <a href="#how">Как работаем</a>
+      <a href="#contacts">Контакты</a>
+    </nav>
+    <a class="phone" href="tel:+79000000000">+7 (900) 000-00-00</a>
+  </div>
+</header>
+
+<main id="top">
+
+  <div class="hero">
+    <div class="wrap">
+      <div class="hero-text">
+        <h1>Скажите, что с машиной: расскажем, что делать и сколько это стоит</h1>
+        <p class="lead">Автосервис для легковых машин: диагностика, тормоза, подвеска, масло, шины. Цену называем до начала работ, без сюрпризов в конце.</p>
+        <a class="btn" href="#contacts">Записаться на осмотр</a>
+        <div class="status" id="status" aria-live="polite">
+          <span class="dot"></span><span id="status-text">Проверяем часы работы…</span>
+        </div>
+      </div>
+
+      <div class="picker">
+        <h2>Что происходит с машиной?</h2>
+        <ul class="symptoms" id="symptoms"></ul>
+        <div class="ticket" id="ticket" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+
+  <section id="prices" class="alt">
+    <div class="wrap">
+      <h2>Цены на частые работы</h2>
+      <p class="section-note">Цены за работу, запчасти и масло считаются отдельно. Точную сумму назовём после осмотра, до начала ремонта.</p>
+      <table class="prices">
+        <thead>
+          <tr><th>Услуга</th><th>Цена</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Компьютерная диагностика<small>считываем ошибки, объясняем, что они значат</small></td><td>1 000 ₽</td></tr>
+          <tr><td>Диагностика подвески<small>осмотр на подъёмнике, зачтём при ремонте</small></td><td>800 ₽</td></tr>
+          <tr><td>Замена масла и фильтра<small>без стоимости масла</small></td><td>от 1 500 ₽</td></tr>
+          <tr><td>Замена тормозных колодок<small>одна ось</small></td><td>от 1 800 ₽</td></tr>
+          <tr><td>Шиномонтаж, комплект<small>снять, поставить, отбалансировать четыре колеса</small></td><td>2 000 ₽</td></tr>
+          <tr><td>Развал-схождение<small>на компьютерном стенде</small></td><td>2 500 ₽</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="how">
+    <div class="wrap">
+      <h2>Как мы работаем</h2>
+      <ol class="steps">
+        <li><strong>Записываетесь</strong><span>Звоните или пишите в мессенджер. Можно приехать и без записи, если есть свободный подъёмник.</span></li>
+        <li><strong>Осматриваем</strong><span>Находим причину и показываем её на самой машине.</span></li>
+        <li><strong>Согласуем цену</strong><span>Называем сумму и срок. Без вашего согласия ничего не делаем.</span></li>
+        <li><strong>Ремонтируем</strong><span>Возвращаем машину и старые детали. На работу даём гарантию.</span></li>
+      </ol>
+    </div>
+  </section>
+
+  <section id="contacts" class="alt">
+    <div class="wrap contact-grid">
+      <div>
+        <h2>Как записаться</h2>
+        <p>Позвоните или напишите: назовите марку машины и что беспокоит. Подскажем время и примерную цену.</p>
+        <div class="contact-buttons">
+          <a class="btn" href="tel:+79000000000">+7 (900) 000-00-00</a>
+          <a class="btn ghost" href="https://t.me/your_username" target="_blank" rel="noopener">Написать в Telegram</a>
+        </div>
+
+        <h3>Адрес</h3>
+        <p>ул. Примерная, 2, гаражный бокс, заезд со стороны двора.</p>
+        <!-- Для реального клиента добавьте ссылку на Яндекс Карты:
+             <a href="https://yandex.ru/maps/?text=АДРЕС" target="_blank" rel="noopener">Открыть на Яндекс Картах</a> -->
+        <p style="color:var(--muted); font-size:15px;">Адрес вымышленный: это демонстрационный сайт.</p>
+      </div>
+
+      <div>
+        <h3>Часы работы</h3>
+        <table class="hours" id="hours">
+          <tbody>
+            <tr data-day="1"><td>Понедельник</td><td>9:00–19:00</td></tr>
+            <tr data-day="2"><td>Вторник</td><td>9:00–19:00</td></tr>
+            <tr data-day="3"><td>Среда</td><td>9:00–19:00</td></tr>
+            <tr data-day="4"><td>Четверг</td><td>9:00–19:00</td></tr>
+            <tr data-day="5"><td>Пятница</td><td>9:00–19:00</td></tr>
+            <tr data-day="6"><td>Суббота</td><td>10:00–16:00</td></tr>
+            <tr data-day="0"><td>Воскресенье</td><td>выходной</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="demo">Демо-сайт: компания вымышленная</div>
+    <div>© Автосервис «Домкрат»</div>
+  </div>
+</footer>
+
+<script>
+  // ---------- Данные о симптомах (правьте под реальный сервис) ----------
+  var CASES = [
+    {
+      id: 'knock',
+      label: 'Стучит подвеска',
+      title: 'Стук при проезде неровностей',
+      causes: ['изношены стойки или втулки стабилизатора', 'просели опоры амортизаторов', 'люфт в шаровой опоре или рулевых наконечниках'],
+      plan: 'Осматриваем подвеску на подъёмнике и находим, что именно стучит.',
+      price: '800 ₽ за осмотр, ремонт от 1 500 ₽',
+      time: '40 минут на осмотр',
+      urgency: { level: 'soon', text: 'Лучше приехать в ближайшие дни: люфт в подвеске портит другие детали.' }
+    },
+    {
+      id: 'check',
+      label: 'Горит Check Engine',
+      title: 'Загорелась лампа неисправности двигателя',
+      causes: ['ошибка датчика (кислорода, температуры, расхода воздуха)', 'пропуски зажигания: свечи или катушки', 'неполадки в топливной системе'],
+      plan: 'Подключаем сканер, считываем ошибки и объясняем, что они значат.',
+      price: '1 000 ₽ за диагностику',
+      time: '30–40 минут',
+      urgency: { level: 'soon', text: 'Если лампа мигает или машина дёргается, не ездите далеко и приезжайте сразу.' }
+    },
+    {
+      id: 'brakes',
+      label: 'Скрипят тормоза',
+      title: 'Скрип, свист или биение при торможении',
+      causes: ['изношены тормозные колодки', 'изношены или деформированы диски', 'загрязнены или заклинили суппорты'],
+      plan: 'Снимаем колёса, замеряем колодки и диски, показываем остаток.',
+      price: 'Осмотр бесплатно, колодки от 1 800 ₽ за ось',
+      time: 'от 1 часа',
+      urgency: { level: 'now', text: 'Тормоза не ждут: приезжайте сразу, пока машина едет уверенно.' }
+    },
+    {
+      id: 'start',
+      label: 'Не заводится',
+      title: 'Двигатель не заводится или заводится с трудом',
+      causes: ['разряжен или изношен аккумулятор', 'неисправен стартер', 'проблемы с топливным насосом или свечами'],
+      plan: 'Проверяем аккумулятор, стартер и подачу топлива, находим причину.',
+      price: '500 ₽ за проверку',
+      time: '30 минут',
+      urgency: { level: 'now', text: 'Позвоните: скажем, что проверить самим и можем ли приехать к вам.' }
+    },
+    {
+      id: 'service',
+      label: 'Пора на ТО',
+      title: 'Плановое обслуживание',
+      causes: ['пробег с последней замены масла больше 10 000 км', 'прошёл год с прошлого ТО', 'пора менять воздушный и салонный фильтры'],
+      plan: 'Меняем масло и фильтры, проверяем жидкости, подвеску и тормоза.',
+      price: 'от 1 500 ₽ за работу, масло отдельно',
+      time: '40–60 минут',
+      urgency: { level: 'plan', text: 'Ничего срочного: запишитесь на удобный день.' }
+    },
+    {
+      id: 'steering',
+      label: 'Тянет в сторону, трясёт руль',
+      title: 'Машину уводит или бьёт руль на скорости',
+      causes: ['сбиты углы установки колёс (развал-схождение)', 'колёса не отбалансированы', 'неравномерный износ или неправильное давление в шинах'],
+      plan: 'Проверяем давление и износ шин, балансируем колёса, делаем развал-схождение.',
+      price: 'развал-схождение 2 500 ₽',
+      time: '1–1,5 часа',
+      urgency: { level: 'soon', text: 'Шины изнашиваются быстрее, поэтому запишитесь на этой неделе.' }
+    },
+    {
+      id: 'tires',
+      label: 'Смена шин',
+      title: 'Сезонная замена шин',
+      causes: ['наступила пора менять резину: ниже +7 °C на зимнюю, выше на летнюю'],
+      plan: 'Снимаем, ставим и балансируем четыре колеса, проверяем давление.',
+      price: '2 000 ₽ за комплект',
+      time: 'около 1 часа',
+      urgency: { level: 'plan', text: 'Перед сезоном очереди растут, записывайтесь заранее.' }
+    }
+  ];
+
+  // ---------- Подбор по симптому ----------
+  (function () {
+    var list = document.getElementById('symptoms');
+    var ticket = document.getElementById('ticket');
+    var buttons = [];
+
+    function esc(s){
+      return String(s).replace(/[&<>"']/g, function (c) {
+        return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+      });
+    }
+
+    function showEmpty(){
+      ticket.innerHTML =
+        '<div class="ticket-head"><span>Предварительная смета</span></div>' +
+        '<div class="ticket-empty"><strong>Выберите, что происходит</strong>' +
+        'Покажем вероятные причины, что мы сделаем, сколько это стоит и как быстро.</div>';
+    }
+
+    function show(item){
+      var causes = item.causes.map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('');
+      ticket.innerHTML =
+        '<div class="ticket-head"><span>Предварительная смета</span><small>ориентир, не окончательная цена</small></div>' +
+        '<div class="ticket-body fade">' +
+          '<h3>' + esc(item.title) + '</h3>' +
+          '<p style="margin:0 0 6px; color:var(--muted);">Вероятные причины:</p>' +
+          '<ul>' + causes + '</ul>' +
+          '<p style="margin-top:12px;"><strong>Что сделаем:</strong> ' + esc(item.plan) + '</p>' +
+        '</div>' +
+        '<div class="perf"></div>' +
+        '<dl class="ticket-foot fade">' +
+          '<div><dt>Ориентир по цене</dt><dd>' + esc(item.price) + '</dd></div>' +
+          '<div><dt>Время</dt><dd>' + esc(item.time) + '</dd></div>' +
+          '<div class="urgency ' + esc(item.urgency.level) + '">' + esc(item.urgency.text) + '</div>' +
+          '<p class="ticket-note">Точную цену назовём после осмотра, до начала работ.</p>' +
+          '<div class="ticket-cta"><a class="btn" href="#contacts">Записаться на осмотр</a></div>' +
+        '</dl>';
+    }
+
+    CASES.forEach(function (item) {
+      var li = document.createElement('li');
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = item.label;
+      b.setAttribute('aria-pressed', 'false');
+      b.addEventListener('click', function () {
+        buttons.forEach(function (x) { x.setAttribute('aria-pressed', 'false'); });
+        b.setAttribute('aria-pressed', 'true');
+        show(item);
+        if (window.matchMedia('(max-width: 860px)').matches) {
+          ticket.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+      });
+      buttons.push(b);
+      li.appendChild(b);
+      list.appendChild(li);
+    });
+
+    showEmpty();
+  })();
+
+  // ---------- «Сейчас открыто / закрыто» ----------
+  (function () {
+    // 0 = воскресенье ... 6 = суббота; [открытие, закрытие] или null
+    var HOURS = {
+      0: null,
+      1: [9, 19], 2: [9, 19], 3: [9, 19], 4: [9, 19], 5: [9, 19],
+      6: [10, 16]
+    };
+    var DAYS_GEN = ['в воскресенье', 'в понедельник', 'во вторник', 'в среду', 'в четверг', 'в пятницу', 'в субботу'];
+
+    var now = new Date();
+    var day = now.getDay();
+    var hour = now.getHours() + now.getMinutes() / 60;
+    var box = document.getElementById('status');
+    var text = document.getElementById('status-text');
+
+    var row = document.querySelector('#hours tr[data-day="' + day + '"]');
+    if (row) row.classList.add('today');
+
+    var today = HOURS[day];
+    if (today && hour >= today[0] && hour < today[1]) {
+      box.className = 'status open';
+      text.textContent = 'Сейчас открыто, работаем до ' + today[1] + ':00';
+      return;
+    }
+
+    box.className = 'status closed';
+    // ищем ближайший рабочий момент
+    for (var i = 0; i < 8; i++) {
+      var d = (day + i) % 7;
+      var h = HOURS[d];
+      if (!h) continue;
+      if (i === 0 && hour >= h[0]) continue; // сегодня уже закрылись
+      var when = i === 0 ? 'сегодня' : (i === 1 ? 'завтра' : DAYS_GEN[d]);
+      text.textContent = 'Сейчас закрыто, откроемся ' + when + ' в ' + h[0] + ':00';
+      return;
+    }
+  })();
+</script>
+
+</body>
+</html>
